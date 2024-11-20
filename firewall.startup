@@ -17,13 +17,18 @@ iptables -P OUTPUT ACCEPT
 # Mettre en place le NAT pour que les paquets sortants aient l'IP publique d'eth1
 iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
 
+# Vérification si le fichier iptables_rules.txt existe
+if [ -f iptables_rules.txt ]; then
+    # Lire et exécuter les règles iptables depuis le fichier
+    while read -r line; do
+        if [[ -n "$line" ]]; then
+            $line  # Exécuter la commande iptables
+        fi
+    done < iptables_rules.txt
+else
+    echo "Le fichier iptables_rules.txt n'existe pas, impossible d'appliquer les règles."
+    exit 1
+fi
 
-# Exécuter le script Python pour générer les commandes iptables
-python block_adress.py | while read -r line; do
-    # Exécuter chaque commande générée par le script Python
-    echo "Exécution de la commande : $line"
-    $line
-done
-
-# Ajouter le DNS
+# Ajouter le DNS (Google DNS dans cet exemple)
 echo "nameserver 8.8.8.8" | tee -a /etc/resolv.conf
