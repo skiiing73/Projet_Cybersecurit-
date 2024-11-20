@@ -1,43 +1,43 @@
+#!/usr/bin/env python3
+import csv
 import subprocess
-import pandas as pd
+import sys
+from urllib.parse import urlparse
 
-# Charger la liste des sites depuis un fichier CSV
-csv_file = "liste_sites.csv"  # Remplace par le chemin de ton fichier
-df = pd.read_csv(csv_file)
+# Chemin vers le fichier CSV contenant les sites
+csv_file = 'liste_sites.csv'
 
-# Extraire la liste des sites
-site_list = df['url'].tolist()
-print(f"Liste des sites à bloquer : {site_list}")
-
-def block_sites(sites):
-    for site in sites:
-        try:
-            # Résoudre le nom de domaine en adresse IP
-            print(f"Résolution DNS pour {site}...")
-            result = subprocess.run(
-                ["nslookup", site],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
+# Vérifier si le fichier existe
+try:
+    with open(csv_file, newline='') as f:
+        reader = csv.reader(f)
+        next(reader)  # Ignorer la première ligne (en-têtes)
+        
+        # Itérer sur chaque URL
+        for row in reader:
+            url = row[0].strip()  # Récupérer l'URL (en supposant que chaque ligne contient une URL)
             
-            # Filtrer l'adresse IP dans la sortie
-            ip_lines = [line for line in result.stdout.splitlines() if "Address" in line]
-            ip = ip_lines[-1].split(":")[-1].strip() if ip_lines else None
-
-            if ip:
-                # Ajouter une règle iptables pour bloquer cette IP
-                print(f"Blocage de {site} ({ip}) via iptables...")
-                subprocess.run(["iptables", "-A", "OUTPUT", "-d", ip, "-j", "REJECT"], check=True)
-            else:
-                print(f"Impossible de résoudre l'adresse IP pour {site}")
-
-        except Exception as e:
-            print(f"Erreur lors du blocage du site {site}: {e}")
-
-    # Sauvegarder les règles iptables
-    print("Sauvegarde des règles iptables...")
-    subprocess.run(["iptables-save", ">", "/etc/iptables/rules.v4"], shell=True, check=True)
-
-# Bloquer les sites
-block_sites(site_list)
+            # Extraire le nom de domaine sans le schéma https:// ou http://
+            parsed_url = urlparse(url)
+            domain = parsed_url.netloc  # Cela récupère le domaine sans le schéma
+            
+            try:
+                # Résoudre l'adresse IP du domaine
+                result = subprocess.run(['nslookup', domain], capture_output=True, text=True)
+                # Extraire l'IP à partir de la sortie
+                ip = None
+                for line in result.stdout.splitlines():
+                    if "Address" in line:
+                        ip = line.split()[-1]
+                
+                if ip:
+                    # Générer la commande iptables pour bloquer l'IP
+                    print(f"iptables -A FORWARD -d {ip} -j REJECT")
+                else:
+                    print(f"Impossible de résoudre l'IP pour {domain}")
+            
+            except subprocess.CalledProcessError:
+                print(f"Erreur lors de la résolution DNS pour {domain}", file=sys.stderr)
+except FileNotFoundError:
+    print(f"Le fichier {csv_file} n'existe pas!", file=sys.stderr)
+    sys.exit(1)
