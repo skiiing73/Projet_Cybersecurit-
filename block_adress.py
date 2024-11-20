@@ -1,26 +1,43 @@
 import subprocess
-import sys
+import pandas as pd
 
-# Nom du site à bloquer
-site = "www.example.com"
+# Charger la liste des sites depuis un fichier CSV
+csv_file = "liste_sites.csv"  # Remplace par le chemin de ton fichier
+df = pd.read_csv(csv_file)
 
-# Résoudre l'IP du site avec 'nslookup'
-try:
-    result = subprocess.run(['nslookup', site], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    # Récupérer l'IP à partir du résultat de nslookup
-    site_ip = None
-    for line in result.stdout.splitlines():
-        if "Address" in line:
-            site_ip = line.split()[-1]  # L'adresse IP se trouve à la fin de la ligne
-            break
+# Extraire la liste des sites
+site_list = df['url'].tolist()
+print(f"Liste des sites à bloquer : {site_list}")
 
-    if site_ip:
-        # Bloquer l'IP dans iptables
-        subprocess.run(['iptables', '-A', 'FORWARD', '-d', site_ip, '-j', 'REJECT'])
-        print(f"Site {site} ({site_ip}) bloqué.")
-    else:
-        print(f"L'adresse IP de {site} n'a pas pu être trouvée.")
+def block_sites(sites):
+    for site in sites:
+        try:
+            # Résoudre le nom de domaine en adresse IP
+            print(f"Résolution DNS pour {site}...")
+            result = subprocess.run(
+                ["nslookup", site],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            # Filtrer l'adresse IP dans la sortie
+            ip_lines = [line for line in result.stdout.splitlines() if "Address" in line]
+            ip = ip_lines[-1].split(":")[-1].strip() if ip_lines else None
 
-except subprocess.CalledProcessError as e:
-    print(f"Erreur lors de la résolution DNS ou de l'exécution de la commande: {e}")
-    sys.exit(1)
+            if ip:
+                # Ajouter une règle iptables pour bloquer cette IP
+                print(f"Blocage de {site} ({ip}) via iptables...")
+                subprocess.run(["iptables", "-A", "OUTPUT", "-d", ip, "-j", "REJECT"], check=True)
+            else:
+                print(f"Impossible de résoudre l'adresse IP pour {site}")
+
+        except Exception as e:
+            print(f"Erreur lors du blocage du site {site}: {e}")
+
+    # Sauvegarder les règles iptables
+    print("Sauvegarde des règles iptables...")
+    subprocess.run(["iptables-save", ">", "/etc/iptables/rules.v4"], shell=True, check=True)
+
+# Bloquer les sites
+block_sites(site_list)

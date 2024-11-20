@@ -18,3 +18,26 @@ iptables -X
 iptables -P INPUT ACCEPT
 iptables -P FORWARD ACCEPT
 iptables -P OUTPUT ACCEPT
+
+# Lire le fichier CSV contenant les URLs
+csv_file="liste_sites.csv"
+
+# Vérifier si le fichier existe
+if [ ! -f "$csv_file" ]; then
+  echo "Le fichier $csv_file n'existe pas!"
+  exit 1
+fi
+
+# Ignorer la première ligne (les en-têtes)
+tail -n +2 "$csv_file" | while IFS=, read -r url; do
+    # Résoudre l'adresse IP du site
+    ip=$(nslookup "$url" | grep 'Address' | tail -n 1 | awk '{print $2}')
+    
+    if [ -n "$ip" ]; then
+        echo "Blocage de $url ($ip)"
+        # Ajouter la règle iptables pour bloquer cette IP
+        iptables -A FORWARD -d "$ip" -j REJECT
+    else
+        echo "Impossible de résoudre l'adresse IP pour $url"
+    fi
+done
