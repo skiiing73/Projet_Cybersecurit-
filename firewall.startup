@@ -17,13 +17,19 @@ iptables -P OUTPUT ACCEPT
 # Mettre en place le NAT pour que les paquets sortants aient l'IP publique d'eth1
 iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
 
+# Chemin du fichier contenant les règles
+rules_file="firewall_rules.sh"
 
-# Exécuter le script Python pour générer les commandes iptables
-python block_adress.py | while read -r line; do
-    # Exécuter chaque commande générée par le script Python
-    echo "Exécution de la commande : $line"
-    $line
-done
+# Vérifier si le fichier de règles existe
+if [ -f "$rules_file" ]; then
+    echo "Application des règles depuis $rules_file..."
+    chmod +x "$rules_file"  # Rendre le fichier exécutable au cas où
+    bash "$rules_file"      # Exécuter le fichier de règles
+else
+    echo "Erreur : Le fichier $rules_file est introuvable."
+fi
 
 # Ajouter le DNS
 echo "nameserver 8.8.8.8" | tee -a /etc/resolv.conf
+
+echo "Configuration du réseau et des règles terminée."
