@@ -3,6 +3,9 @@
 iptables -A FORWARD -s 192.168.0.3 -j ACCEPT
 iptables -A FORWARD -s 192.168.0.4 -j ACCEPT
 
+# Rediriger le trafic HTTP vers le proxy Privoxy
+iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8118
+
 iptables -A FORWARD -d 199.250.217.132 -j REJECT
 iptables -A FORWARD -d 103.230.125.196 -j REJECT
 iptables -A FORWARD -d 216.116.195.195 -j REJECT
