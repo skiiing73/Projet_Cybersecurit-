@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Configuration des interfaces réseau
+ifconfig eth0 192.168.0.1 netmask 255.255.255.0 up  # LAN côté Freedonia
+ifconfig eth1 up                                    # Interface vers Internet (DHCP)
+                                   
+echo "nameserver 8.8.8.8" | tee -a /etc/resolv.conf
+
+# Mettre en place le NAT pour que les paquets sortants aient l'IP publique d'eth1
+iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
+
+# Réinitialiser les règles iptables pour éviter les conflits
+iptables -F
+iptables -t nat -F
+iptables -X
+
+# (Facultatif) Autoriser tout le trafic entrant et sortant pour le moment
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
