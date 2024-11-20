@@ -7,22 +7,26 @@ from urllib.parse import urlparse
 
 # Chemin vers le fichier CSV contenant les sites
 csv_file = 'liste_sites.csv'
-output_file = 'iptables_rules.txt'  # Fichier pour stocker les règles iptables
+# Chemin vers le fichier de règles iptables
+firewall_rules_file = 'firewall/firewall_rules.sh'
 
-# Ouvrir le fichier de sortie pour écrire les règles
-with open(output_file, 'w') as output_f:
-    try:
-        with open(csv_file, newline='') as f:
-            reader = csv.reader(f)
-            next(reader)  # Ignorer la première ligne (en-têtes)
-            
+try:
+    with open(csv_file, newline='') as f:
+        reader = csv.reader(f)
+        next(reader)  # Ignorer la première ligne (en-têtes)
+
+        # Ouvrir le fichier de règles en mode écriture
+        with open(firewall_rules_file, 'w') as rules_file:
+            # Ajouter un shebang au début
+            rules_file.write("#!/bin/bash\n\n")
+
             # Itérer sur chaque URL
             for row in reader:
                 url = row[0].strip()  # Récupérer l'URL (en supposant que chaque ligne contient une URL)
                 
                 # Extraire le nom de domaine sans le schéma https:// ou http://
                 parsed_url = urlparse(url)
-                domain = parsed_url.netloc  # Cela récupère le domaine sans le schéma
+                domain = parsed_url.netloc or parsed_url.path  # Handle cases without scheme
                 
                 try:
                     # Résoudre l'adresse IP du domaine
@@ -30,21 +34,20 @@ with open(output_file, 'w') as output_f:
                     # Extraire l'IP à partir de la sortie
                     ip = None
                     for line in result.stdout.splitlines():
-                        if "Address" in line:
+                        if "Address" in line and not line.startswith("Server"):
                             ip = line.split()[-1]
                     
                     if ip:
-                        # Vérifier si l'IP est une adresse valide (IPv4 ou IPv6)
-                        try:
-                            ipaddress.ip_address(ip)  # Cela lève une exception si l'IP est invalide
-                            output_f.write(f"iptables -A FORWARD -d {ip} -j REJECT\n")
-                        except ValueError:
-                            print(f"Adresse IP invalide : {ip} pour {domain}")
+                        # Générer la règle iptables pour bloquer l'IP
+                        rule = f"iptables -A OUTPUT -d {ip} -j REJECT\n"
+                        rules_file.write(rule)
                     else:
                         print(f"Impossible de résoudre l'IP pour {domain}")
                 
                 except subprocess.CalledProcessError:
                     print(f"Erreur lors de la résolution DNS pour {domain}", file=sys.stderr)
-    except FileNotFoundError:
-        print(f"Le fichier {csv_file} n'existe pas!", file=sys.stderr)
-        sys.exit(1)
+
+            print(f"Règles générées et sauvegardées dans {firewall_rules_file}")
+except FileNotFoundError:
+    print(f"Le fichier {csv_file} n'existe pas!", file=sys.stderr)
+    sys.exit(1)

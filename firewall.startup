@@ -17,18 +17,19 @@ iptables -P OUTPUT ACCEPT
 # Mettre en place le NAT pour que les paquets sortants aient l'IP publique d'eth1
 iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
 
-# Vérification si le fichier iptables_rules.txt existe
-if [ -f iptables_rules.txt ]; then
-    # Lire et exécuter les règles iptables depuis le fichier
-    while read -r line; do
-        if [[ -n "$line" ]]; then
-            $line  # Exécuter la commande iptables
-        fi
-    done < iptables_rules.txt
+# Chemin du fichier contenant les règles
+rules_file="firewall_rules.sh"
+
+# Vérifier si le fichier de règles existe
+if [ -f "$rules_file" ]; then
+    echo "Application des règles depuis $rules_file..."
+    chmod +x "$rules_file"  # Rendre le fichier exécutable au cas où
+    bash "$rules_file"      # Exécuter le fichier de règles
 else
-    echo "Le fichier iptables_rules.txt n'existe pas, impossible d'appliquer les règles."
-    exit 1
+    echo "Erreur : Le fichier $rules_file est introuvable."
 fi
 
-# Ajouter le DNS (Google DNS dans cet exemple)
+# Ajouter le DNS
 echo "nameserver 8.8.8.8" | tee -a /etc/resolv.conf
+
+echo "Configuration du réseau et des règles terminée."
