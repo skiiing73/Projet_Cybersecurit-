@@ -2,6 +2,7 @@
 import csv
 import subprocess
 import sys
+import ipaddress
 from urllib.parse import urlparse
 
 # Chemin vers le fichier CSV contenant les sites
