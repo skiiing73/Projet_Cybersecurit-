@@ -1,4 +1,7 @@
 #!/bin/bash
+# Règles pour la banque centrale et le ministre(exception)
+iptables -A FORWARD -s 192.168.0.3 -j ACCEPT
+iptables -A FORWARD -s 192.168.0.4 -j ACCEPT
 
 iptables -A FORWARD -d 199.250.217.132 -j REJECT
 iptables -A FORWARD -d 103.230.125.196 -j REJECT

@@ -31,5 +31,4 @@ fi
 
 # Ajouter le DNS
 echo "nameserver 8.8.8.8" | tee -a /etc/resolv.conf
-
 echo "Configuration du réseau et des règles terminée."
