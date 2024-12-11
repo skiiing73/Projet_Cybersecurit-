@@ -37,5 +37,6 @@ echo "Configuration du réseau et des règles terminée."
 apt-get update
 apt-get install -y python3-pip
 pip3 install requests beautifulsoup4
+apt-get install sqlite3
 echo "Dépendances installées."
 
