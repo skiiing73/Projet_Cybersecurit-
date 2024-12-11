@@ -29,10 +29,13 @@ else
     echo "Erreur : Le fichier $rules_file est introuvable."
 fi
 
-# Activer les règles du firewall au démarrage
-iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 9999
-iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 9999
-
 # Ajouter le DNS
 echo "nameserver 8.8.8.8" | tee -a /etc/resolv.conf
 echo "Configuration du réseau et des règles terminée."
+
+#installer les dependances
+apt-get update
+apt-get install -y python3-pip
+pip3 install requests beautifulsoup4
+echo "Dépendances installées."
+
