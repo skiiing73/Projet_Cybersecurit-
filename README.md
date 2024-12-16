@@ -3,8 +3,8 @@ Coté Défense.
 
 Test du code  : 
 
-Lancez le réseau
-kathara lstart
+Lancez le réseau :
+_kathara lstart_
 
 Dans le powershell du firewal lancez le proxy: 
-python3 proxy.py
+_python3 proxy.py_
