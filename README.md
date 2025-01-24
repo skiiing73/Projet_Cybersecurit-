@@ -1,4 +1,4 @@
-Projet de Cybersécurité. 
+Projet de Cybersécurité. Module INFO731 Polytech Annecy
 Coté Défense.
 DEGOUEY Corentin BERCIER Thomas WILHELM Arno
 
