@@ -17,4 +17,4 @@ Vous pouvez maintenant essayez les différents fonctionnalités suivantes :
 -réseau filtré par mots clés et par sites pour les habitants mais pas le ministre et la banque
 -enregistrement de toutes les connexions au réseau extérieur dans un fichier.
 
-Les mots clés et les sites interdits sont dans les fichiers csv. 
+Les mots clés et les sites interdits sont dans les fichiers csv du répertoire firewall. 
